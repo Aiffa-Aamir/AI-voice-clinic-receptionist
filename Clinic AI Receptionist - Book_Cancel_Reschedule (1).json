@@ -1,0 +1,1984 @@
+{
+  "name": "Clinic AI Receptionist - Book/Cancel/Reschedule",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "clinic-receptionist",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "id": "e796b15d-e546-4b5d-9e4e-6237b4474792",
+      "name": "Webhook Trigger",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [
+        320,
+        1456
+      ],
+      "webhookId": "5ee16351-b503-4bc4-8652-768d7346c20e"
+    },
+    {
+      "parameters": {
+        "rules": {
+          "values": [
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 1
+                },
+                "conditions": [
+                  {
+                    "leftValue": "={{ $json.body.intent }}",
+                    "rightValue": "book",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    },
+                    "id": "c0cacfe7-d0c2-4008-95c1-94659b11b55b"
+                  }
+                ],
+                "combinator": "and"
+              }
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 1
+                },
+                "conditions": [
+                  {
+                    "leftValue": "={{ $json.body.intent }}",
+                    "rightValue": "cancel",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    },
+                    "id": "ceb4942e-6c3d-4cfb-9e98-d38cd24bd984"
+                  }
+                ],
+                "combinator": "and"
+              }
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 1
+                },
+                "conditions": [
+                  {
+                    "leftValue": "={{ $json.body.intent }}",
+                    "rightValue": "reschedule",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    },
+                    "id": "4ba8bf2f-3c0b-4bb0-8b3e-19c0e6347b2d"
+                  }
+                ],
+                "combinator": "and"
+              }
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 1
+                },
+                "conditions": [
+                  {
+                    "id": "ccd3c62c-50e0-427a-ad94-d47ee1dd105e",
+                    "leftValue": "={{ $json.body.intent }}",
+                    "rightValue": "check_availability",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals",
+                      "name": "filter.operator.equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              }
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 1
+                },
+                "conditions": [
+                  {
+                    "id": "8e42adca-3885-4ef1-ab73-fac6e8f066a3",
+                    "leftValue": "={{ $json.body.intent }}",
+                    "rightValue": "lookup",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals",
+                      "name": "filter.operator.equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              }
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 1
+                },
+                "conditions": [
+                  {
+                    "id": "e4809d68-ff2e-4c0c-9484-2702143f488f",
+                    "leftValue": "={{ $json.body.intent }}",
+                    "rightValue": "cancel_all",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals",
+                      "name": "filter.operator.equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              }
+            }
+          ]
+        },
+        "options": {
+          "fallbackOutput": "extra"
+        }
+      },
+      "id": "e01c51a1-7ef7-4867-b35a-0101beac6900",
+      "name": "Intent Router",
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 3,
+      "position": [
+        576,
+        1456
+      ]
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ { \"success\": false, \"message\": \"Could not determine intent\" } }}",
+        "options": {}
+      },
+      "id": "fc51d67f-8b4a-4d3b-8c16-648630617bb6",
+      "name": "Unknown Intent Response",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.1,
+      "position": [
+        848,
+        1696
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "// const durations = { new_patient: 45, follow_up: 30, checkup: 30, urgent: 30 };\n// const body = $json.body;\n// const visitType = body.visit_type || 'follow_up';\n// const duration = durations[visitType] || 30;\n// const start = new Date(body.requested_datetime);\n// const end = new Date(start.getTime() + duration * 60000);\n\n// return [{ json: { ...body, duration_minutes: duration, start_iso: start.toISOString(), end_iso: end.toISOString() } }];\n\nconst durations = { new_patient: 45, follow_up: 30, checkup: 30, urgent: 30 };\nconst body = $json.body;\nconst visitType = body.visit_type || 'follow_up';\nconst duration = durations[visitType] || 30;\n\n// Force the requested time to be interpreted as Asia/Karachi local time\nlet rawDatetime = body.requested_datetime;\nif (!/[+-]\\d\\d:\\d\\d$|Z$/.test(rawDatetime)) {\n  rawDatetime = rawDatetime + '+05:00';\n}\nconst start = new Date(rawDatetime);\nconst end = new Date(start.getTime() + duration * 60000);\n\n\nreturn [{ json: { ...body, duration_minutes: duration, start_iso: start.toISOString(), end_iso: end.toISOString() } }];"
+      },
+      "id": "20a08ab5-beed-41f1-a94a-7dbb89f4f8a9",
+      "name": "Set Visit Duration",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        848,
+        1216
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "getAll",
+        "calendar": {
+          "__rl": true,
+          "value": "auraxofficial24@gmail.com",
+          "mode": "list",
+          "cachedResultName": "auraxofficial24@gmail.com"
+        },
+        "timeMin": "={{$json.start_iso}}",
+        "timeMax": "={{$json.end_iso}}",
+        "options": {}
+      },
+      "id": "1af5ac86-9cfa-4c2b-aa5b-0d4922ab3bfe",
+      "name": "Check Availability",
+      "type": "n8n-nodes-base.googleCalendar",
+      "typeVersion": 1.3,
+      "position": [
+        1104,
+        1216
+      ],
+      "alwaysOutputData": true,
+      "credentials": {
+        "googleCalendarOAuth2Api": {
+          "id": "ZUbQrK1Yc31XYu9s",
+          "name": "Google Calendar OAuth2 API"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 1
+          },
+          "conditions": [
+            {
+              "leftValue": "={{ $json.id }}",
+              "rightValue": "0",
+              "operator": {
+                "type": "string",
+                "operation": "empty",
+                "singleValue": true
+              },
+              "id": "de771c90-4f7c-4169-a1b8-edf6cd99e7bf"
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "880d1b01-113e-4326-b61a-fcc489ee1a5b",
+      "name": "Slot Available?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [
+        1360,
+        1216
+      ]
+    },
+    {
+      "parameters": {
+        "calendar": {
+          "__rl": true,
+          "value": "primary",
+          "mode": "list"
+        },
+        "start": "={{ $('Set Visit Duration').item.json.start_iso }}",
+        "end": "={{ $('Set Visit Duration').item.json.end_iso }}",
+        "additionalFields": {
+          "description": "=Patient: {{$('Set Visit Duration').item.json.patient_name}}\nDOB: {{$('Set Visit Duration').item.json.dob}}\nPhone: {{$('Set Visit Duration').item.json.phone}}\nReason: {{$('Set Visit Duration').item.json.visit_type}}\nemail: {{$('Set Visit Duration').item.json.email}}",
+          "summary": "={{$('Set Visit Duration').item.json.visit_type}} - {{$('Set Visit Duration').item.json.patient_name}}"
+        }
+      },
+      "id": "edd95777-d38e-4be0-bad6-7f5d25f97ac9",
+      "name": "Create Appointment",
+      "type": "n8n-nodes-base.googleCalendar",
+      "typeVersion": 1.3,
+      "position": [
+        1616,
+        1120
+      ],
+      "credentials": {
+        "googleCalendarOAuth2Api": {
+          "id": "ZUbQrK1Yc31XYu9s",
+          "name": "Google Calendar OAuth2 API"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "append",
+        "documentId": {
+          "__rl": true,
+          "value": "17AtgGEIyV6AeTc__VVzO6K3XF27IXigbwL4llBLKHjE",
+          "mode": "list",
+          "cachedResultName": "Appointments",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/17AtgGEIyV6AeTc__VVzO6K3XF27IXigbwL4llBLKHjE/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "gid=0",
+          "mode": "list",
+          "cachedResultName": "Sheet1",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/17AtgGEIyV6AeTc__VVzO6K3XF27IXigbwL4llBLKHjE/edit#gid=0"
+        },
+        "columns": {
+          "mappingMode": "autoMapInputData",
+          "value": {},
+          "matchingColumns": [
+            "id"
+          ],
+          "schema": [
+            {
+              "id": "id",
+              "displayName": "id",
+              "required": false,
+              "defaultMatch": true,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "patient_name",
+              "displayName": "patient_name",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "dob",
+              "displayName": "dob",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "email",
+              "displayName": "email",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "phone",
+              "displayName": "phone",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "visit_type",
+              "displayName": "visit_type",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "intent",
+              "displayName": "intent",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Appointment Date",
+              "displayName": "Appointment Date",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "start Time",
+              "displayName": "start Time",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "end Time",
+              "displayName": "end Time",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "duration_minutes",
+              "displayName": "duration_minutes",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Booked At",
+              "displayName": "Booked At",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Status",
+              "displayName": "Status",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "id": "49a94446-9c90-46eb-b7ed-49f6a5afcde1",
+      "name": "Log Appointment",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.5,
+      "position": [
+        1984,
+        1120
+      ],
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "UpzjfM10nueiRGHt",
+          "name": "Google Sheets OAuth2 API"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "sendTo": "={{$json.email}}",
+        "subject": "Appointment confirmed - Greenfield Medical",
+        "emailType": "text",
+        "message": "=Hi {{ $json.patient_name }} ,Your appointment is confirmed for {{ $json['Appointment Date'] }} starting at {{ $json['start Time'] }} ending at {{ $json['end Time'] }} your appointment id is {{ $json.id }}.See you then! Greenfield Medical",
+        "options": {}
+      },
+      "id": "0deb7671-1c77-4e89-a3d3-a89cdbcb8741",
+      "name": "Send Booking Email",
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.1,
+      "position": [
+        2144,
+        1120
+      ],
+      "webhookId": "b58e3695-2524-441a-8a14-d9a7b7da68c0",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "bz8RA5mJeg5RDkzf",
+          "name": "Gmail OAuth2 API"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ { \"success\": true, \"message\": \"Appointment booked for \" + $('Set Visit Duration').item.json.patient_name  + \" on \" +$('Log Appointment').item.json['Appointment Date'] + \"at\" + $('Log Appointment').item.json['start Time']  } }}",
+        "options": {}
+      },
+      "id": "f45be6c3-7366-46c4-8d00-43d34bfb684c",
+      "name": "Respond Booked",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.1,
+      "position": [
+        2400,
+        1120
+      ]
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ { \"success\": false, \"message\": \"That time is no longer available\" } }}",
+        "options": {}
+      },
+      "id": "f835fcd9-1205-41d0-add3-3650d4d64592",
+      "name": "Respond Slot Taken",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.1,
+      "position": [
+        1616,
+        1344
+      ]
+    },
+    {
+      "parameters": {
+        "documentId": {
+          "__rl": true,
+          "value": "17AtgGEIyV6AeTc__VVzO6K3XF27IXigbwL4llBLKHjE",
+          "mode": "list",
+          "cachedResultName": "Appointments",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/17AtgGEIyV6AeTc__VVzO6K3XF27IXigbwL4llBLKHjE/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "gid=0",
+          "mode": "list",
+          "cachedResultName": "Sheet1",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/17AtgGEIyV6AeTc__VVzO6K3XF27IXigbwL4llBLKHjE/edit#gid=0"
+        },
+        "filtersUI": {
+          "values": [
+            {
+              "lookupColumn": "patient_name",
+              "lookupValue": "={{ $json.body.patient_name }}"
+            },
+            {
+              "lookupColumn": "dob",
+              "lookupValue": "={{ $json.body.dob }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "27e1c5b0-a060-48c7-a7f5-ab6720de5f2d",
+      "name": "Find Appointment (Cancel)",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.5,
+      "position": [
+        848,
+        1424
+      ],
+      "alwaysOutputData": true,
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "UpzjfM10nueiRGHt",
+          "name": "Google Sheets OAuth2 API"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose",
+            "version": 1
+          },
+          "conditions": [
+            {
+              "leftValue": "={{$items().length}}",
+              "rightValue": 0,
+              "operator": {
+                "type": "string",
+                "operation": "notEquals"
+              },
+              "id": "c13fe474-09b5-402b-9044-ded867bb0235"
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {
+          "looseTypeValidation": true
+        }
+      },
+      "id": "38c9d368-9d13-41d0-bb6c-e13d6adbfdd3",
+      "name": "Appointment Found? (Cancel)",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [
+        1104,
+        1424
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "delete",
+        "calendar": {
+          "__rl": true,
+          "value": "auraxofficial24@gmail.com",
+          "mode": "list",
+          "cachedResultName": "auraxofficial24@gmail.com"
+        },
+        "eventId": "={{ $json.id }}",
+        "options": {}
+      },
+      "id": "ce60b8e3-e018-4e23-84d0-b7ba18d790e7",
+      "name": "Delete Calendar Event",
+      "type": "n8n-nodes-base.googleCalendar",
+      "typeVersion": 1.3,
+      "position": [
+        1360,
+        1376
+      ],
+      "retryOnFail": true,
+      "credentials": {
+        "googleCalendarOAuth2Api": {
+          "id": "ZUbQrK1Yc31XYu9s",
+          "name": "Google Calendar OAuth2 API"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "delete",
+        "documentId": {
+          "__rl": true,
+          "value": "17AtgGEIyV6AeTc__VVzO6K3XF27IXigbwL4llBLKHjE",
+          "mode": "list",
+          "cachedResultName": "Appointments",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/17AtgGEIyV6AeTc__VVzO6K3XF27IXigbwL4llBLKHjE/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "gid=0",
+          "mode": "list",
+          "cachedResultName": "Sheet1",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/17AtgGEIyV6AeTc__VVzO6K3XF27IXigbwL4llBLKHjE/edit#gid=0"
+        },
+        "startIndex": "={{ $('Find Appointment (Cancel)').item.json.row_number }}"
+      },
+      "id": "95d2ea18-af7c-44f5-8e23-05f65d8eb840",
+      "name": "Update Sheet Cancelled",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.5,
+      "position": [
+        1616,
+        1488
+      ],
+      "alwaysOutputData": true,
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "UpzjfM10nueiRGHt",
+          "name": "Google Sheets OAuth2 API"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "sendTo": "={{ $('Find Appointment (Cancel)').item.json.email }}",
+        "subject": "Appointment cancelled - Greenfield Medical",
+        "message": "=Hi {{ $('Find Appointment (Cancel)').item.json.patient_name }},Your appointment on {{ $('Find Appointment (Cancel)').item.json['Appointment Date'] }} has been cancelled. Call us if you'd like to rebook.Greenfield Medical",
+        "options": {}
+      },
+      "id": "8b97e4c9-9689-4904-a607-b230675b92eb",
+      "name": "Send Cancellation Email",
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.1,
+      "position": [
+        1888,
+        1376
+      ],
+      "webhookId": "60fdff0e-5340-4059-b28b-ee9c87c227b8",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "bz8RA5mJeg5RDkzf",
+          "name": "Gmail OAuth2 API"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ { \"success\": true, \"message\": \"Appointment cancelled\" } }}",
+        "options": {}
+      },
+      "id": "5855124b-a59a-48fa-8579-0f8bbebb2c13",
+      "name": "Respond Cancelled",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.1,
+      "position": [
+        2144,
+        1376
+      ]
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ { \"success\": false, \"message\": \"No matching appointment found\" } }}",
+        "options": {}
+      },
+      "id": "64ee4832-9895-432f-a6c0-d25287f02e8e",
+      "name": "Respond Not Found (Cancel)",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.1,
+      "position": [
+        1360,
+        1520
+      ]
+    },
+    {
+      "parameters": {
+        "documentId": {
+          "__rl": true,
+          "value": "17AtgGEIyV6AeTc__VVzO6K3XF27IXigbwL4llBLKHjE",
+          "mode": "list",
+          "cachedResultName": "Appointments",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/17AtgGEIyV6AeTc__VVzO6K3XF27IXigbwL4llBLKHjE/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "gid=0",
+          "mode": "list",
+          "cachedResultName": "Sheet1",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/17AtgGEIyV6AeTc__VVzO6K3XF27IXigbwL4llBLKHjE/edit#gid=0"
+        },
+        "filtersUI": {
+          "values": [
+            {
+              "lookupColumn": "patient_name",
+              "lookupValue": "={{ $json.body.patient_name }}"
+            },
+            {
+              "lookupColumn": "=dob",
+              "lookupValue": "={{ $json.body.dob }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "c9db8a97-839c-478e-839c-1c4ed6104a51",
+      "name": "Find Appointment (Reschedule)",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.5,
+      "position": [
+        848,
+        1696
+      ],
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "UpzjfM10nueiRGHt",
+          "name": "Google Sheets OAuth2 API"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "conditions": [
+            {
+              "leftValue": "={{$items().length}}",
+              "rightValue": 0,
+              "operator": {
+                "type": "number",
+                "operation": "notEquals"
+              }
+            }
+          ],
+          "combinator": "and",
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 1
+          }
+        },
+        "options": {}
+      },
+      "id": "6b6eb756-3bf4-40cf-986e-43d85d0543ce",
+      "name": "Appointment Found? (Reschedule)",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [
+        1104,
+        1696
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "const durations = { new_patient: 45, follow_up: 30, checkup: 30, urgent: 30 };\nconst visitType = $json.visit_type || 'follow_up';\nconst duration = durations[visitType] || 30;\n\nlet rawDatetime = $('Intent Router').first().json.body.requested_datetime;\nif (!/[+-]\\d\\d:\\d\\d$|Z$/.test(rawDatetime)) {\n  rawDatetime = rawDatetime + '+05:00';\n}\nconst start = new Date(rawDatetime);\nconst end = new Date(start.getTime() + duration * 60000);\n\n\nreturn [{ json: { ...$json, duration_minutes: duration, start_iso: start.toISOString(), end_iso: end.toISOString() } }];"
+      },
+      "id": "2452a0c8-8f0c-4249-8e4e-f331120341b3",
+      "name": "Set New Duration",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1360,
+        1696
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "getAll",
+        "calendar": {
+          "__rl": true,
+          "value": "primary",
+          "mode": "list"
+        },
+        "timeMin": "={{$json.start_iso}}",
+        "timeMax": "={{$json.end_iso}}",
+        "options": {}
+      },
+      "id": "336cc666-0d7d-4b15-bc29-c5fe8a682f64",
+      "name": "Check New Slot Availability",
+      "type": "n8n-nodes-base.googleCalendar",
+      "typeVersion": 1.3,
+      "position": [
+        1616,
+        1664
+      ],
+      "alwaysOutputData": true,
+      "credentials": {
+        "googleCalendarOAuth2Api": {
+          "id": "ZUbQrK1Yc31XYu9s",
+          "name": "Google Calendar OAuth2 API"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 1
+          },
+          "conditions": [
+            {
+              "leftValue": "={{ $json.id }}",
+              "rightValue": 0,
+              "operator": {
+                "type": "dateTime",
+                "operation": "empty",
+                "singleValue": true
+              },
+              "id": "5b0a390b-23e2-4dd2-9ca7-c4bf8f502a4a"
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "23327ab4-8515-418f-8478-38fc995776c6",
+      "name": "New Slot Available?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [
+        1888,
+        1664
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "update",
+        "calendar": {
+          "__rl": true,
+          "mode": "list",
+          "value": "auraxofficial24@gmail.com"
+        },
+        "eventId": "={{ $('Appointment Found? (Reschedule)').item.json.id }}",
+        "updateFields": {
+          "end": "={{ $('Set New Duration').item.json.end_iso }}",
+          "start": "={{ $('Set New Duration').item.json.start_iso }}"
+        }
+      },
+      "id": "203068a3-0a0c-49eb-a0fe-cfa3d812e38d",
+      "name": "Update Calendar Event",
+      "type": "n8n-nodes-base.googleCalendar",
+      "typeVersion": 1.3,
+      "position": [
+        2144,
+        1616
+      ],
+      "credentials": {
+        "googleCalendarOAuth2Api": {
+          "id": "ZUbQrK1Yc31XYu9s",
+          "name": "Google Calendar OAuth2 API"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "update",
+        "documentId": {
+          "__rl": true,
+          "value": "17AtgGEIyV6AeTc__VVzO6K3XF27IXigbwL4llBLKHjE",
+          "mode": "list",
+          "cachedResultName": "Appointments",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/17AtgGEIyV6AeTc__VVzO6K3XF27IXigbwL4llBLKHjE/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "gid=0",
+          "mode": "list",
+          "cachedResultName": "Sheet1",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/17AtgGEIyV6AeTc__VVzO6K3XF27IXigbwL4llBLKHjE/edit#gid=0"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "id": "={{ $('Appointment Found? (Reschedule)').item.json.id }}",
+            "start Time": "={{ DateTime.fromISO($('Set New Duration').item.json.start_iso).toFormat('HH:mm') }}",
+            "end Time": "={{ DateTime.fromISO($('Set New Duration').item.json.end_iso).toFormat('HH:mm') }}",
+            "Appointment Date": "={{ DateTime.fromISO($('Set New Duration').item.json.start_iso).toFormat('yyyy-MM-dd') }}",
+            "Booked At": "={{ $('Set New Duration').item.json['Booked At'] }}",
+            "Status": "rescheduled",
+            "intent": "={{ $json.body.intent }}"
+          },
+          "matchingColumns": [
+            "id"
+          ],
+          "schema": [
+            {
+              "id": "id",
+              "displayName": "id",
+              "required": false,
+              "defaultMatch": true,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "patient_name",
+              "displayName": "patient_name",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "dob",
+              "displayName": "dob",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "email",
+              "displayName": "email",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "phone",
+              "displayName": "phone",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "visit_type",
+              "displayName": "visit_type",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "intent",
+              "displayName": "intent",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Appointment Date",
+              "displayName": "Appointment Date",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "start Time",
+              "displayName": "start Time",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "end Time",
+              "displayName": "end Time",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "duration_minutes",
+              "displayName": "duration_minutes",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "Booked At",
+              "displayName": "Booked At",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Status",
+              "displayName": "Status",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "row_number",
+              "displayName": "row_number",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "number",
+              "canBeUsedToMatch": true,
+              "readOnly": true,
+              "removed": true
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "id": "91bd8e13-969d-4263-afef-cad4662b7c3a",
+      "name": "Update Sheet Rescheduled",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.5,
+      "position": [
+        2400,
+        1616
+      ],
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "UpzjfM10nueiRGHt",
+          "name": "Google Sheets OAuth2 API"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "sendTo": "={{ $('Set New Duration').item.json.email }}",
+        "subject": "Appointment rescheduled - Greenfield Medical",
+        "message": "=Hi {{ $('Set New Duration').item.json.patient_name }},Your appointment has been moved from {{ $('Appointment Found? (Reschedule)').item.json['start Time'] }} to {{ $json['start Time'] }} as per your request .Greenfield Medical",
+        "options": {}
+      },
+      "id": "ece7b4dc-2925-4f30-9097-fecf1fac4db5",
+      "name": "Send Reschedule Email",
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.1,
+      "position": [
+        2656,
+        1616
+      ],
+      "webhookId": "d29fc257-9b40-41e7-a2c7-487eb28e6e26",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "bz8RA5mJeg5RDkzf",
+          "name": "Gmail OAuth2 API"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ { \"success\": true, \"message\": \"Appointment moved to \" + $json.start_iso } }}",
+        "options": {}
+      },
+      "id": "8cdfb1e6-d419-4020-b9aa-56beec943cc1",
+      "name": "Respond Rescheduled",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.1,
+      "position": [
+        2928,
+        1616
+      ]
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ { \"success\": false, \"message\": \"That new time is not available\" } }}",
+        "options": {}
+      },
+      "id": "67f31faf-ced9-4062-a565-1b697aefffd9",
+      "name": "Respond New Slot Taken",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.1,
+      "position": [
+        2144,
+        1776
+      ]
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ { \"success\": false, \"message\": \"No matching appointment found\" } }}",
+        "options": {}
+      },
+      "id": "dc40b6ff-39b0-4c59-9d46-c8ca99dfef39",
+      "name": "Respond Not Found (Reschedule)",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.1,
+      "position": [
+        1360,
+        1840
+      ]
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "afa883a5-5b9a-4d25-a64c-445931b56fd8",
+              "name": "id",
+              "value": "={{ $json.id }}",
+              "type": "string"
+            },
+            {
+              "id": "c4200eba-2a8e-4dfb-9353-4279bd0f70cd",
+              "name": "patient_name",
+              "value": "={{ $('Set Visit Duration').item.json.patient_name }}",
+              "type": "string"
+            },
+            {
+              "id": "9978a444-56a9-47d7-b9d4-819934df8e70",
+              "name": "dob",
+              "value": "={{ $('Set Visit Duration').item.json.dob }}",
+              "type": "string"
+            },
+            {
+              "id": "921109ae-9885-4776-a87f-d03ba32d00c1",
+              "name": "email",
+              "value": "={{ $('Set Visit Duration').item.json.email }}",
+              "type": "string"
+            },
+            {
+              "id": "0a8a27f9-0633-43d8-81fd-2dfeb3372127",
+              "name": "phone",
+              "value": "={{ $('Set Visit Duration').item.json.phone }}",
+              "type": "string"
+            },
+            {
+              "id": "912178c5-6686-4b47-adef-bb9ad3a12f3f",
+              "name": "visit_type",
+              "value": "={{ $('Set Visit Duration').item.json.visit_type }}",
+              "type": "string"
+            },
+            {
+              "id": "53d3af67-e77e-4d0c-995f-585b59fcac7c",
+              "name": "intent",
+              "value": "={{ $('Set Visit Duration').item.json.intent }}",
+              "type": "string"
+            },
+            {
+              "id": "a68901d0-1186-49e3-8ee0-cd7a5bd72120",
+              "name": "Appointment Date",
+              "value": "={{$('Set Visit Duration').item.json.start_iso.split('T')[0]}}",
+              "type": "string"
+            },
+            {
+              "id": "ba118719-8ff8-46b3-ba83-b709e9308b3c",
+              "name": "start Time",
+              "value": "={{DateTime.fromISO($('Set Visit Duration').item.json.start_iso).toFormat('HH:mm')}}",
+              "type": "string"
+            },
+            {
+              "id": "255c1ece-37c7-4c71-aea9-8135ac0c40aa",
+              "name": "end Time",
+              "value": "={{DateTime.fromISO($('Set Visit Duration').item.json.end_iso).toFormat('HH:mm')}}",
+              "type": "string"
+            },
+            {
+              "id": "51a855a8-2fb4-4ae8-b094-a79b98d386d3",
+              "name": "duration_minutes",
+              "value": "={{ $('Set Visit Duration').item.json.duration_minutes }}",
+              "type": "number"
+            },
+            {
+              "id": "2b74d986-1429-482b-b32d-9c30ce89cf17",
+              "name": "Booked At",
+              "value": "={{$now.toISO()}}",
+              "type": "string"
+            },
+            {
+              "id": "e3ea8f83-9407-4608-8ded-cc9cf6144f43",
+              "name": "Status",
+              "value": "booked",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        1808,
+        1120
+      ],
+      "id": "aabe3f1f-27ca-40ad-8360-bbadf04f0da5",
+      "name": "Edit Fields"
+    },
+    {
+      "parameters": {
+        "operation": "getAll",
+        "calendar": {
+          "__rl": true,
+          "value": "auraxofficial24@gmail.com",
+          "mode": "list",
+          "cachedResultName": "auraxofficial24@gmail.com"
+        },
+        "limit": 10,
+        "timeMin": "={{ $json.candidate_slots[0].start_iso }}",
+        "timeMax": "={{ $json.candidate_slots[15].end_iso }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleCalendar",
+      "typeVersion": 1.3,
+      "position": [
+        1072,
+        1968
+      ],
+      "id": "882e43fd-3333-412c-917a-5ff18f6f1235",
+      "name": "Get many events",
+      "alwaysOutputData": true,
+      "credentials": {
+        "googleCalendarOAuth2Api": {
+          "id": "ZUbQrK1Yc31XYu9s",
+          "name": "Google Calendar OAuth2 API"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "const candidates = $('Code in JavaScript(checking_available slots)').item.json.candidate_slots;\nconst busyEvents = $input.all().map(i => i.json).filter(e => e.start && e.end);\n\nconst free = candidates.filter(slot => {\n  const s = new Date(slot.start_iso).getTime();\n  const e = new Date(slot.end_iso).getTime();\n  return !busyEvents.some(evt => {\n    const bs = new Date(evt.start.dateTime).getTime();\n    const be = new Date(evt.end.dateTime).getTime();\n    return s < be && e > bs; // overlap check\n  });\n});\n\nreturn [{ json: { available_slots: free.slice(0, 3) } }];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1280,
+        2048
+      ],
+      "id": "a36c80cd-705b-4bdb-995a-cea53f837767",
+      "name": "Code in JavaScript1"
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ { \"success\": true, \"available_slots\": $json.available_slots } }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.5,
+      "position": [
+        1504,
+        2064
+      ],
+      "id": "f65e263a-5f7e-44ef-a4ab-9658e9e21639",
+      "name": "Respond to Webhook"
+    },
+    {
+      "parameters": {
+        "jsCode": "const durations = { new_patient: 45, follow_up: 30, checkup: 30, urgent: 30 };\nconst visitType = $json.body.visit_type || 'follow_up';\nconst duration = durations[visitType] || 30;\nconst date = $json.body.requested_date; // \"2026-08-01\"\n\nconst slots = [];\nlet hour = 9, min = 0;\nwhile (hour < 17) {\n  const start = new Date(`${date}T${String(hour).padStart(2,'0')}:${String(min).padStart(2,'0')}:00+05:00`); // <- +05:00 forces Asia/Karachi\n  const end = new Date(start.getTime() + duration * 60000);\n  slots.push({ start_iso: start.toISOString(), end_iso: end.toISOString() });\n  min += duration;\n  if (min >= 60) { hour += Math.floor(min/60); min = min % 60; }\n}\nreturn [{ json: { ...$json.body, candidate_slots: slots } }];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        864,
+        1952
+      ],
+      "id": "de0898dd-9221-4902-8865-50058dd1dfea",
+      "name": "Code in JavaScript(checking_available slots)"
+    },
+    {
+      "parameters": {
+        "respondWith": "allIncomingItems",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.5,
+      "position": [
+        1072,
+        2176
+      ],
+      "id": "4378ce0d-f3b7-41dd-8810-caad9572e8c8",
+      "name": "Respond to Webhook1"
+    },
+    {
+      "parameters": {
+        "documentId": {
+          "__rl": true,
+          "value": "17AtgGEIyV6AeTc__VVzO6K3XF27IXigbwL4llBLKHjE",
+          "mode": "list",
+          "cachedResultName": "Appointments",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/17AtgGEIyV6AeTc__VVzO6K3XF27IXigbwL4llBLKHjE/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "gid=0",
+          "mode": "list",
+          "cachedResultName": "Sheet1",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/17AtgGEIyV6AeTc__VVzO6K3XF27IXigbwL4llBLKHjE/edit#gid=0"
+        },
+        "filtersUI": {
+          "values": [
+            {
+              "lookupColumn": "patient_name",
+              "lookupValue": "={{ $json.body.patient_name }}"
+            },
+            {
+              "lookupColumn": "=dob",
+              "lookupValue": "={{ $json.body.dob }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "2c3531ee-a834-462f-a103-694e7a32d197",
+      "name": "Lookup Appointment",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.5,
+      "position": [
+        864,
+        2176
+      ],
+      "alwaysOutputData": true,
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "UpzjfM10nueiRGHt",
+          "name": "Google Sheets OAuth2 API"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "documentId": {
+          "__rl": true,
+          "value": "17AtgGEIyV6AeTc__VVzO6K3XF27IXigbwL4llBLKHjE",
+          "mode": "list",
+          "cachedResultName": "Appointments",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/17AtgGEIyV6AeTc__VVzO6K3XF27IXigbwL4llBLKHjE/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "gid=0",
+          "mode": "list",
+          "cachedResultName": "Sheet1",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/17AtgGEIyV6AeTc__VVzO6K3XF27IXigbwL4llBLKHjE/edit#gid=0"
+        },
+        "filtersUI": {
+          "values": [
+            {
+              "lookupColumn": "patient_name",
+              "lookupValue": "={{ $json.body.patient_name }}"
+            },
+            {
+              "lookupColumn": "dob",
+              "lookupValue": "={{ $json.body.dob }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "342020a7-59c5-4eb3-b746-897db137e5f9",
+      "name": "Find Appointment (Cancel)1",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.5,
+      "position": [
+        1760,
+        1936
+      ],
+      "alwaysOutputData": true,
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "UpzjfM10nueiRGHt",
+          "name": "Google Sheets OAuth2 API"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "delete",
+        "calendar": {
+          "__rl": true,
+          "value": "auraxofficial24@gmail.com",
+          "mode": "list",
+          "cachedResultName": "auraxofficial24@gmail.com"
+        },
+        "eventId": "={{ $json.id }}",
+        "options": {}
+      },
+      "id": "e764fb92-1a9b-4676-b888-9c4b942e4795",
+      "name": "Delete Calendar Event1",
+      "type": "n8n-nodes-base.googleCalendar",
+      "typeVersion": 1.3,
+      "position": [
+        2032,
+        2176
+      ],
+      "retryOnFail": true,
+      "credentials": {
+        "googleCalendarOAuth2Api": {
+          "id": "ZUbQrK1Yc31XYu9s",
+          "name": "Google Calendar OAuth2 API"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "delete",
+        "documentId": {
+          "__rl": true,
+          "value": "17AtgGEIyV6AeTc__VVzO6K3XF27IXigbwL4llBLKHjE",
+          "mode": "list",
+          "cachedResultName": "Appointments",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/17AtgGEIyV6AeTc__VVzO6K3XF27IXigbwL4llBLKHjE/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "gid=0",
+          "mode": "list",
+          "cachedResultName": "Sheet1",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/17AtgGEIyV6AeTc__VVzO6K3XF27IXigbwL4llBLKHjE/edit#gid=0"
+        },
+        "startIndex": "={{ $('Find Appointment (Cancel)1').item.json.row_number }}"
+      },
+      "id": "9b62240d-4cf0-4f29-bef5-f6f24fd37389",
+      "name": "Update Sheet Cancelled1",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.5,
+      "position": [
+        2192,
+        2176
+      ],
+      "alwaysOutputData": true,
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "UpzjfM10nueiRGHt",
+          "name": "Google Sheets OAuth2 API"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "sendTo": "={{ $('Find Appointment (Cancel)1').item.json.email }}",
+        "subject": "Appointment cancelled - Greenfield Medical",
+        "message": "=Hi {{ $('Find Appointment (Cancel)1').item.json.patient_name }},Your all appointments have been cancelled. Call us if you'd like to rebook.Greenfield Medical",
+        "options": {}
+      },
+      "id": "5146dcd0-1ffe-4c7b-a6bf-9c692288482b",
+      "name": "Send Cancellation Email1",
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.1,
+      "position": [
+        2320,
+        1936
+      ],
+      "webhookId": "60fdff0e-5340-4059-b28b-ee9c87c227b8",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "bz8RA5mJeg5RDkzf",
+          "name": "Gmail OAuth2 API"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "options": {
+          "reset": false
+        }
+      },
+      "type": "n8n-nodes-base.splitInBatches",
+      "typeVersion": 3,
+      "position": [
+        1968,
+        1936
+      ],
+      "id": "f4b970dc-3d00-46a9-b37b-97e5131ae298",
+      "name": "Loop Over Items"
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ { \"success\": true, \"message\": \"Appointments cancelled\" } }}",
+        "options": {}
+      },
+      "id": "9cb7503d-d465-4e36-8a29-d64cfe7d6c7c",
+      "name": "Respond Cancelled1",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.1,
+      "position": [
+        2576,
+        1936
+      ]
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Webhook Trigger": {
+      "main": [
+        [
+          {
+            "node": "Intent Router",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Intent Router": {
+      "main": [
+        [
+          {
+            "node": "Set Visit Duration",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Find Appointment (Cancel)",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Find Appointment (Reschedule)",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Code in JavaScript(checking_available slots)",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Lookup Appointment",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Find Appointment (Cancel)1",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Unknown Intent Response",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Set Visit Duration": {
+      "main": [
+        [
+          {
+            "node": "Check Availability",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Check Availability": {
+      "main": [
+        [
+          {
+            "node": "Slot Available?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Slot Available?": {
+      "main": [
+        [
+          {
+            "node": "Create Appointment",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Respond Slot Taken",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Create Appointment": {
+      "main": [
+        [
+          {
+            "node": "Edit Fields",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Log Appointment": {
+      "main": [
+        [
+          {
+            "node": "Send Booking Email",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Send Booking Email": {
+      "main": [
+        [
+          {
+            "node": "Respond Booked",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Find Appointment (Cancel)": {
+      "main": [
+        [
+          {
+            "node": "Appointment Found? (Cancel)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Appointment Found? (Cancel)": {
+      "main": [
+        [
+          {
+            "node": "Delete Calendar Event",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Respond Not Found (Cancel)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Delete Calendar Event": {
+      "main": [
+        [
+          {
+            "node": "Update Sheet Cancelled",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Update Sheet Cancelled": {
+      "main": [
+        [
+          {
+            "node": "Send Cancellation Email",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Send Cancellation Email": {
+      "main": [
+        [
+          {
+            "node": "Respond Cancelled",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Find Appointment (Reschedule)": {
+      "main": [
+        [
+          {
+            "node": "Appointment Found? (Reschedule)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Appointment Found? (Reschedule)": {
+      "main": [
+        [
+          {
+            "node": "Set New Duration",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Respond Not Found (Reschedule)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Set New Duration": {
+      "main": [
+        [
+          {
+            "node": "Check New Slot Availability",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Check New Slot Availability": {
+      "main": [
+        [
+          {
+            "node": "New Slot Available?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "New Slot Available?": {
+      "main": [
+        [
+          {
+            "node": "Update Calendar Event",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Respond New Slot Taken",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Update Calendar Event": {
+      "main": [
+        [
+          {
+            "node": "Update Sheet Rescheduled",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Update Sheet Rescheduled": {
+      "main": [
+        [
+          {
+            "node": "Send Reschedule Email",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Send Reschedule Email": {
+      "main": [
+        [
+          {
+            "node": "Respond Rescheduled",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Edit Fields": {
+      "main": [
+        [
+          {
+            "node": "Log Appointment",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get many events": {
+      "main": [
+        [
+          {
+            "node": "Code in JavaScript1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code in JavaScript1": {
+      "main": [
+        [
+          {
+            "node": "Respond to Webhook",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code in JavaScript(checking_available slots)": {
+      "main": [
+        [
+          {
+            "node": "Get many events",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Lookup Appointment": {
+      "main": [
+        [
+          {
+            "node": "Respond to Webhook1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Find Appointment (Cancel)1": {
+      "main": [
+        [
+          {
+            "node": "Loop Over Items",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Delete Calendar Event1": {
+      "main": [
+        [
+          {
+            "node": "Update Sheet Cancelled1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Update Sheet Cancelled1": {
+      "main": [
+        [
+          {
+            "node": "Loop Over Items",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Loop Over Items": {
+      "main": [
+        [
+          {
+            "node": "Send Cancellation Email1",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Delete Calendar Event1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Send Cancellation Email1": {
+      "main": [
+        [
+          {
+            "node": "Respond Cancelled1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate",
+    "availableInMCP": false
+  },
+  "versionId": "433bda3e-46ed-42ad-bebe-5f00e4498826",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "7d2c91ce4b83168701cde4b363f19b88db52729a4e659087fb21f61a320e7c0e"
+  },
+  "nodeGroups": [],
+  "id": "AVX4jh2GWWLhzXoN",
+  "tags": []
+}

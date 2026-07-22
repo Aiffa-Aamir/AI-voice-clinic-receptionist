@@ -1,0 +1,312 @@
+{
+  "edges": {
+    "start_to_greeting": {
+      "source": "start_node",
+      "target": "greeting",
+      "forward_condition": {
+        "label": null,
+        "type": "unconditional"
+      },
+      "backward_condition": null
+    },
+    "greeting_to_collect": {
+      "source": "greeting",
+      "target": "collect_info",
+      "forward_condition": {
+        "label": null,
+        "type": "llm",
+        "condition": "The caller has stated what they need (confirm/lookup, book, reschedule, or cancel)"
+      },
+      "backward_condition": null
+    },
+    "collect_to_schedule": {
+      "source": "collect_info",
+      "target": "schedule",
+      "forward_condition": {
+        "label": null,
+        "type": "llm",
+        "condition": "The caller wants to book a new appointment and we have their basic info"
+      },
+      "backward_condition": null
+    },
+    "collect_to_cancel": {
+      "source": "collect_info",
+      "target": "cancel_reschedule",
+      "forward_condition": {
+        "label": null,
+        "type": "llm",
+        "condition": "The caller wants to cancel or reschedule an existing appointment"
+      },
+      "backward_condition": null
+    },
+    "schedule_to_wrap": {
+      "source": "schedule",
+      "target": "wrap_up",
+      "forward_condition": {
+        "label": null,
+        "type": "llm",
+        "condition": "The appointment has been booked and confirmed"
+      },
+      "backward_condition": null
+    },
+    "cancel_to_wrap": {
+      "source": "cancel_reschedule",
+      "target": "wrap_up",
+      "forward_condition": {
+        "label": null,
+        "type": "llm",
+        "condition": "The cancellation or reschedule is complete"
+      },
+      "backward_condition": null
+    },
+    "wrap_to_end": {
+      "source": "wrap_up",
+      "target": "end",
+      "forward_condition": {
+        "label": null,
+        "type": "llm",
+        "condition": "The caller has no more questions and is ready to hang up"
+      },
+      "backward_condition": null
+    },
+    "edge_01ky49ykdyfk6at6t3dkbbyhpe": {
+      "source": "collect_info",
+      "target": "node_01ky49ykdwfk6at6sxn4b6c2t4",
+      "forward_condition": {
+        "type": "llm",
+        "label": null,
+        "condition": "The caller wants to confirm or check their appointment and we have their basic info."
+      },
+      "backward_condition": null
+    },
+    "edge_01ky4dbkhsfk6at6tdevpbzr0h": {
+      "source": "node_01ky49ykdwfk6at6sxn4b6c2t4",
+      "target": "wrap_up",
+      "forward_condition": {
+        "type": "llm",
+        "label": null,
+        "condition": "The user got the info they want about the appointment and there's nothing they want else then that."
+      },
+      "backward_condition": null
+    }
+  },
+  "nodes": {
+    "start_node": {
+      "type": "start",
+      "position": {
+        "x": 2,
+        "y": 174
+      },
+      "edge_order": [
+        "start_to_greeting"
+      ]
+    },
+    "greeting": {
+      "type": "override_agent",
+      "position": {
+        "x": 0,
+        "y": 300
+      },
+      "edge_order": [
+        "greeting_to_collect"
+      ],
+      "conversation_config": {
+        "agent": {
+          "prompt": {
+            "built_in_tools": {}
+          }
+        },
+        "tts": {},
+        "turn": {
+          "turn_eagerness": null,
+          "spelling_patience": null,
+          "speculative_turn": null
+        },
+        "conversation": {
+          "client_events": null
+        }
+      },
+      "additional_prompt": "Open with warmth and reassurance: 'Hi, this is Grace at Greenfield Medical — how can I help you today?' Identify intent: book new appointment, reschedule/cancel, confirm an existing appointment, general office question, or urgent medical issue.\n\nIMPORTANT: If the caller signals they want to end the call, briefly acknowledge AND call end_call to actually hang up.",
+      "additional_knowledge_base": [],
+      "additional_tool_ids": [],
+      "label": "Greeting",
+      "entry_behavior": "auto"
+    },
+    "collect_info": {
+      "type": "override_agent",
+      "position": {
+        "x": -8,
+        "y": 488
+      },
+      "edge_order": [
+        "collect_to_schedule",
+        "collect_to_cancel"
+      ],
+      "conversation_config": {
+        "agent": {
+          "prompt": {
+            "built_in_tools": {}
+          }
+        },
+        "tts": {},
+        "turn": {
+          "turn_eagerness": null,
+          "spelling_patience": null,
+          "speculative_turn": null
+        },
+        "conversation": {
+          "client_events": null
+        }
+      },
+      "additional_prompt": "You are Grace. Greet warmly. Ask intent: book, lookup, cancel, or reschedule.\nCollect ONLY:\n- Book: name, DOB, phone (digits), email (spell letter-by-letter), visit_type (new/follow-up/checkup/urgent)\n- Lookup: name + DOB only\n- Cancel: name + DOB only\n- Reschedule: name + DOB + preferred date\nConfirm all fields. Ask email consent. If caller wants to end: acknowledge + end_call.\nNever proceed without all required fields.",
+      "additional_knowledge_base": [],
+      "additional_tool_ids": [],
+      "label": "Collect Patient Info",
+      "entry_behavior": "auto"
+    },
+    "schedule": {
+      "type": "override_agent",
+      "position": {
+        "x": -56,
+        "y": 670
+      },
+      "edge_order": [
+        "schedule_to_wrap"
+      ],
+      "conversation_config": {
+        "agent": {
+          "prompt": {
+            "built_in_tools": {}
+          }
+        },
+        "tts": {},
+        "turn": {
+          "turn_eagerness": null,
+          "spelling_patience": null,
+          "speculative_turn": null
+        },
+        "conversation": {
+          "client_events": null
+        }
+      },
+      "additional_prompt": "Check availability: call manage_appointment with intent:check_availability + name + DOB + visit_type (ask options clearly: new_patient, follow_up, checkup, urgent) + requested_date.\n- Offer only returned slots\n- No slots: ask for another date\nBook: call manage_appointment with intent:book + name + DOB + phone + email + visit_type + requested_datetime. before calling the manage_appointment tool confirm the dob and spelling of the name from user.\n- Wait for tool response before confirming\n- Confirm date/time/provider, mention prep, confirm email\nNever invent times. If tool fails: retry once, then apologize + end_call.\nIf caller wants to end: acknowledge + end_call.",
+      "additional_knowledge_base": [],
+      "additional_tool_ids": [
+        "tool_0701kx8fehjmfqptzeecrq80gqkc"
+      ],
+      "label": "Schedule Appointment",
+      "entry_behavior": "auto"
+    },
+    "cancel_reschedule": {
+      "type": "override_agent",
+      "position": {
+        "x": 460,
+        "y": 658
+      },
+      "edge_order": [
+        "cancel_to_wrap"
+      ],
+      "conversation_config": {
+        "agent": {
+          "prompt": {
+            "built_in_tools": {}
+          }
+        },
+        "tts": {},
+        "turn": {
+          "turn_eagerness": null,
+          "spelling_patience": null,
+          "speculative_turn": null
+        },
+        "conversation": {
+          "client_events": null
+        }
+      },
+      "additional_prompt": "Lookup: call manage_appointment with intent:lookup + name + DOB.\nask user to spell the name to avoid confusion . or spell it out and confirm the data from user before calling the tool.\n\nCancel: confirm, then call intent:cancel. Mention policy.\nIf the caller wants to cancel all their appointments, confirm the count found and get explicit confirmation before proceeding, then call manage_appointment with intent: cancel_all.\n\nReschedule: check_availability with new date, offer returned slots, then call intent:reschedule with chosen datetime.\nWait for tool response. Read back new appointment.\nIf no appointment found: offer to book.\nIf caller wants to end: acknowledge + end_call.",
+      "additional_knowledge_base": [],
+      "additional_tool_ids": [
+        "tool_0701kx8fehjmfqptzeecrq80gqkc"
+      ],
+      "label": "Cancel or Reschedule",
+      "entry_behavior": "auto"
+    },
+    "wrap_up": {
+      "type": "override_agent",
+      "position": {
+        "x": 6,
+        "y": 918
+      },
+      "edge_order": [
+        "wrap_to_end"
+      ],
+      "conversation_config": {
+        "agent": {
+          "prompt": {
+            "built_in_tools": {}
+          }
+        },
+        "tts": {},
+        "turn": {
+          "turn_eagerness": null,
+          "spelling_patience": null,
+          "speculative_turn": null
+        },
+        "conversation": {
+          "client_events": null
+        }
+      },
+      "additional_prompt": "Summarize what was done. Mention email confirmation. Ask: \"Anything else?\" If no: thank + end_call. If yes: route back.\nIf caller wants to end: acknowledge + end_call.",
+      "additional_knowledge_base": [],
+      "additional_tool_ids": [
+        "tool_0701kx8fehjmfqptzeecrq80gqkc"
+      ],
+      "label": "Wrap Up",
+      "entry_behavior": "auto"
+    },
+    "end": {
+      "type": "end",
+      "position": {
+        "x": 8,
+        "y": 1110.75
+      },
+      "edge_order": [],
+      "return_when_nested": true
+    },
+    "node_01ky49ykdwfk6at6sxn4b6c2t4": {
+      "type": "override_agent",
+      "label": "Lookup Appointment",
+      "position": {
+        "x": -548,
+        "y": 660.375
+      },
+      "edge_order": [],
+      "conversation_config": {
+        "agent": {
+          "prompt": {
+            "prompt": null,
+            "llm": null,
+            "built_in_tools": {}
+          }
+        },
+        "tts": {
+          "voice_id": null
+        },
+        "turn": {
+          "turn_eagerness": null,
+          "spelling_patience": null,
+          "speculative_turn": null,
+          "retranscribe_on_turn_timeout": null
+        },
+        "conversation": {
+          "client_events": null
+        }
+      },
+      "additional_prompt": "Call manage_appointment with intent:lookup + name + DOB ask user to spell the name to avoid confusion . or spell it out and confirm the data from user before calling the tool.\n- 0 found: offer to book\n- 1 found: read date/time/provider\n- 2+ found: list dates, ask which, then read full details\nNever invent data. If tool fails: apologize, ask to call back, end_call. \nIf caller wants to end: acknowledge + end_call.",
+      "additional_knowledge_base": [],
+      "additional_tool_ids": [
+        "tool_0701kx8fehjmfqptzeecrq80gqkc"
+      ]
+    }
+  },
+  "prevent_subagent_loops": true
+}
